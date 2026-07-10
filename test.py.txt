@@ -1,0 +1,8 @@
+# Test file to confirm the GitHub web-editor -> clone/pull workflow
+print("If you can run this on the personal laptop, the pipeline works.")
+
+def add(a, b):
+    return a + b
+
+if __name__ == "__main__":
+    print("2 + 3 =", add(2, 3))
