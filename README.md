@@ -4,9 +4,6 @@ prior-authorization requests into APPROVE, DENY, or ROUTE TO HUMAN
 decisions. The system demonstrates multi-agent coordination, tool usage, task
 planning, and an evaluation/governance loop.
 ---
-Participants
-Participant #1: [YOUR NAME] — [YOUR EMPLOYEE ID]
----
 Overview
 In enterprise decisioning (such as health-insurance prior authorization), a single
 LLM answering alone has two failure modes: it can fabricate a decision, and it can
