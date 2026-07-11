@@ -1,4 +1,9 @@
 {
+    "llm_config": {
+        "class": "langchain_mistralai.chat_models.ChatMistralAI",
+        "model_name": "mistral-medium-latest",
+        "temperature": 0
+    },
     "commondefs": {
         "replacement_strings": {
             "instructions_prefix": """
