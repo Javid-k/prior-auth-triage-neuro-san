@@ -1,9 +1,130 @@
-import os
-from langchain_mistralai import ChatMistralAI
-
-key = os.environ.get("MISTRAL_API_KEY")
-print("Key seen by Python:", (key[:8] + "...") if key else "NONE")
-
-llm = ChatMistralAI(model="mistral-medium-latest", mistral_api_key=key)
-resp = llm.invoke("say hi")
-print("Mistral replied:", resp.content)
+{
+    "llm_config": {
+        "class": "langchain_mistralai.chat_models.ChatMistralAI",
+        "model_name": "mistral-medium-latest",
+        "temperature": 0
+    },
+    "commondefs": {
+        "replacement_strings": {
+            "instructions_prefix": """
+                You are part of a prior-authorization triage system.
+                Only act within your specific role. Never invent a decision.
+            """
+        },
+        "replacement_values": {}
+    },
+    "tools": [
+        {
+            "name": "Auth Coordinator",
+            "function": {
+                "description": "Triages a medical prior-authorization request into approve, deny, or route to human review."
+            },
+            "instructions": """
+                {instructions_prefix}
+                Your name is `Auth Coordinator`, the top-level agent.
+                When you receive an authorization request:
+                1. Call `Extractor` to pull the structured fields from the request text.
+                2. Call `Rules Agent` with those fields to get a preliminary decision.
+                3. Call `Compliance Reviewer` with the preliminary decision to validate it.
+                4. Return the reviewer's final verdict to the user in plain language,
+                   stating the decision (APPROVE / DENY / ROUTE TO HUMAN) and the reason.
+                Never make the decision yourself; rely on the down-chain agents.
+            """,
+            "tools": ["Extractor", "Rules Agent", "Compliance Reviewer"]
+        },
+        {
+            "name": "Extractor",
+            "function": {
+                "description": "Extracts structured fields from a free-text authorization request.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "request_text": { "type": "string", "description": "The raw authorization request" }
+                    },
+                    "required": ["request_text"]
+                }
+            },
+            "instructions": """
+                {instructions_prefix}
+                Your name is `Extractor`.
+                From the request text, extract these fields and return them clearly:
+                - age (integer, if stated)
+                - plan (e.g. 'Medicare Advantage', 'PPO')
+                - service (normalize to one of: MRI, specialty_drug, cosmetic,
+                  physical_therapy, proton_therapy, or the closest lowercase token)
+                - step_therapy_documented (true/false, if mentioned)
+                - requested_visits (integer, if mentioned)
+                Report only what is present. Do not guess missing values.
+            """,
+            "tools": []
+        },
+        {
+            "name": "Rules Agent",
+            "function": {
+                "description": "Evaluates extracted fields against the authorization ruleset.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "age": { "type": "int" },
+                        "plan": { "type": "string" },
+                        "service": { "type": "string" },
+                        "step_therapy_documented": { "type": "boolean" },
+                        "requested_visits": { "type": "int" }
+                    },
+                    "required": ["service"]
+                }
+            },
+            "instructions": """
+                {instructions_prefix}
+                Your name is `Rules Agent`.
+                Call `RulesTool` with the fields you were given. Return the tool's
+                JSON result verbatim (decision, reason, matched_rules) without altering it.
+            """,
+            "tools": ["RulesTool"]
+        },
+        {
+            "name": "RulesTool",
+            "function": {
+                "description": "Evaluate an authorization request against the rules-as-data file.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "age": { "type": "int" },
+                        "plan": { "type": "string" },
+                        "service": { "type": "string" },
+                        "step_therapy_documented": { "type": "boolean" },
+                        "requested_visits": { "type": "int" }
+                    },
+                    "required": ["service"]
+                }
+            },
+            "class": "rules_tool.RulesTool"
+        },
+        {
+            "name": "Compliance Reviewer",
+            "function": {
+                "description": "Validates a preliminary decision against governance rules.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "preliminary_decision": { "type": "string", "description": "The JSON decision from Rules Agent" }
+                    },
+                    "required": ["preliminary_decision"]
+                }
+            },
+            "instructions": """
+                {instructions_prefix}
+                Your name is `Compliance Reviewer`, the governance gate.
+                Review the preliminary decision:
+                - If the decision is 'route_human' for ANY reason (no match, missing
+                  docs, high-cost, or conflict), confirm ROUTE TO HUMAN and explain why.
+                - If 'approve' or 'deny', confirm it ONLY if a matched rule id justifies
+                  it. If matched_rules is empty but the decision is not route_human,
+                  override to ROUTE TO HUMAN (never auto-decide without a rule).
+                Return a final verdict line: 'FINAL: APPROVE' / 'FINAL: DENY' /
+                'FINAL: ROUTE TO HUMAN', followed by the reason.
+            """,
+            "tools": []
+        }
+    ]
+}
