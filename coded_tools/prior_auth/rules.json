@@ -1,0 +1,37 @@
+[
+  {
+    "id": "R1",
+    "description": "Routine imaging for seniors on Medicare Advantage",
+    "conditions": { "min_age": 65, "plan": "Medicare Advantage", "service": "MRI" },
+    "outcome": "approve",
+    "rationale": "MRI is covered for members aged 65+ on Medicare Advantage plans."
+  },
+  {
+    "id": "R2",
+    "description": "Specialty drug missing step-therapy documentation",
+    "conditions": { "service": "specialty_drug", "step_therapy_documented": false },
+    "outcome": "route_human",
+    "rationale": "Specialty drug requests require step-therapy documentation; missing docs need human review."
+  },
+  {
+    "id": "R3",
+    "description": "Cosmetic procedures are not medically necessary",
+    "conditions": { "service": "cosmetic" },
+    "outcome": "deny",
+    "rationale": "Cosmetic procedures are excluded as not medically necessary."
+  },
+  {
+    "id": "R4",
+    "description": "Physical therapy within visit limit",
+    "conditions": { "service": "physical_therapy", "max_requested_visits": 20 },
+    "outcome": "approve",
+    "rationale": "Physical therapy is approved up to 20 visits per authorization."
+  },
+  {
+    "id": "R5",
+    "description": "High-cost service always needs human sign-off",
+    "conditions": { "service": "proton_therapy" },
+    "outcome": "route_human",
+    "rationale": "High-cost services are flagged for mandatory human clinical review regardless of eligibility."
+  }
+]
