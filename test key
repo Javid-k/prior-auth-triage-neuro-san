@@ -1,0 +1,9 @@
+import os
+from google import genai
+
+key = os.environ.get("GEMINI_API_KEY")
+print("Key seen by Python:", (key[:8] + "...") if key else "NONE")
+
+client = genai.Client(api_key=key)
+resp = client.models.generate_content(model="gemini-2.0-flash", contents="say hi")
+print("Gemini replied:", resp.text)
