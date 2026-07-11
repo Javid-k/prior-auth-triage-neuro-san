@@ -1,8 +1,9 @@
-# Test file to confirm the GitHub web-editor -> clone/pull workflow
-print("If you can run this on the personal laptop, the pipeline works.")
+import os
+from langchain_mistralai import ChatMistralAI
 
-def add(a, b):
-    return a + b
+key = os.environ.get("MISTRAL_API_KEY")
+print("Key seen by Python:", (key[:8] + "...") if key else "NONE")
 
-if __name__ == "__main__":
-    print("2 + 3 =", add(2, 3))
+llm = ChatMistralAI(model="mistral-medium-latest", mistral_api_key=key)
+resp = llm.invoke("say hi")
+print("Mistral replied:", resp.content)
